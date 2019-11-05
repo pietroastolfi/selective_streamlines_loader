@@ -122,6 +122,9 @@ def load_selected_streamlines(trk_fn, idxs, apply_affine=True,
             print("Converting all streamlines from list to array")
 
         streamlines = np.array(streamlines, dtype=np.object)
+    else:
+        streamlines = nib.streamlines.ArraySequence(streamlines)
+
 
     return streamlines, lengths[idxs]
 
