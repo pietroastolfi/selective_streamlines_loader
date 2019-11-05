@@ -33,6 +33,11 @@ def load_selected_streamlines(trk_fn, idxs, apply_affine=True,
                               array=False, verbose=False):
     """Load a list of streamlines from a .trk file that have a given
     index.
+
+    This function is sort of similar to nibabel.streamlines.load() but
+    extremely FASTER. It is very convenient if you need to load only
+    some streamlines in large tractograms. Like 100x faster than what
+    you can get with nibabel.
     """
     if verbose:
         print("Loading %s" % trk_fn)
