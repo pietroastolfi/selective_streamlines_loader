@@ -51,15 +51,16 @@ def load_selected_streamlines(trk_fn, idxs, apply_affine=True, verbose=False):
         t0 = time()
 
     lengths = np.empty(nb_streamlines, dtype=np.int)
+
+    get_length = get_length_struct
     # In order to reduce the 20x increase in time when reading small
     # amounts of bytes with NumPy and Python >3.2, we use two
     # different implementations of the function that parses 4 bytes
     # into an int32:
-    if float(sys.version[:3]) > 3.2:
-        get_length = get_length_from_bytes
-    else:
-        get_length = get_length_numpy
-        # get_length = get_length_struct
+    # if float(sys.version[:3]) > 3.2:
+    #     get_length = get_length_from_bytes
+    # else:
+    #     get_length = get_length_numpy
 
     with open(trk_fn, 'rb') as f:
         f.seek(header_size)
