@@ -147,10 +147,6 @@ if __name__ == '__main__':
     idxs = np.random.choice(500000, 200000, replace=True)
     idxs.sort()
 
-    apply_affine = True
-
     streamlines2, lengths2 = load_selected_streamlines(trk_fn, idxs,
-                                                       apply_affine=apply_affine,
+                                                       apply_affine=True,
                                                        verbose=True)
-
-
