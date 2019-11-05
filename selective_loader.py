@@ -1,3 +1,4 @@
+import sys
 import nibabel as nib
 import os
 import struct
@@ -28,15 +29,24 @@ if __name__ == '__main__':
     print("Parsing lenghts of %s streamlines" % nb_streamlines)
     t0 = time()
     lengths = np.empty(nb_streamlines, dtype=np.int)
-    with open(trk_fn, 'rb') as f:
-        f.seek(header_size)
-        for idx in range(nb_streamlines):
-            l = np.fromfile(f, np.int32, 1)[0]
-            lengths[idx] = l
-            jump = point_bytes * l + properties_bytes
-            f.seek(jump, 1)
+    if float(sys.version[:3]) > 3.2:
+        with open(trk_fn, 'rb') as f:
+            f.seek(header_size)
+            for idx in range(nb_streamlines):
+                l = int.from_bytes(f.read(4), byteorder='little')
+                lengths[idx] = l
+                jump = point_bytes * l + properties_bytes
+                f.seek(jump, 1)
+    else:
+        with open(trk_fn, 'rb') as f:
+            f.seek(header_size)
+            for idx in range(nb_streamlines):
+                l = np.fromfile(f, np.int32, 1)[0]
+                lengths[idx] = l
+                jump = point_bytes * l + properties_bytes
+                f.seek(jump, 1)
 
-        print("%s sec." % (time() - t0))
+    print("%s sec." % (time() - t0))
 
     # position in bytes where to find a given streamline in the TRK file:
     index_bytes = lengths * point_bytes + properties_bytes + length_bytes
