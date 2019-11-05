@@ -29,10 +29,14 @@ def get_length_from_bytes(f, nb_bytes_int32=4, byteorder='little'):
     return int.from_bytes(f.read(nb_bytes_int32), byteorder=byteorder)
 
 
-def load_selected_streamlines(trk_fn, idxs, apply_affine=True, verbose=False):
+def load_selected_streamlines(trk_fn, idxs, apply_affine=True,
+                              array=False, verbose=False):
     """Load a list of streamlines from a .trk file that have a given
     index.
     """
+    if verbose:
+        print("Loading %s" % trk_fn)
+
     lazy_trk = nib.streamlines.load(trk_fn, lazy_load=True)
     header = lazy_trk.header
     header_size = header['hdr_size']
@@ -107,6 +111,12 @@ def load_selected_streamlines(trk_fn, idxs, apply_affine=True, verbose=False):
 
         aff = nib.streamlines.trk.get_affine_trackvis_to_rasmm(lazy_trk.header)
         streamlines = [nib.affines.apply_affine(aff, s) for s in streamlines]
+
+    if array:
+        if verbose:
+            print("Converting all streamlines from list to array")
+
+        streamlines = np.array(streamlines, dtype=np.object)
 
     return streamlines, lengths[idxs]
 
@@ -195,32 +205,3 @@ if __name__ == '__main__':
     assert((lengths[idxs] == lengths2).all())
     assert(np.all([(streamlines[i]==streamlines2[i]).all() for i in range(len(streamlines))]))
 
-    # OLD CODE:
-    # M = lengths.sum()  ## total number of points in the file
-    # streams = np.empty((M * point_size), dtype=np.float32)
-
-    # print("Extracting streamlines with the desired id")
-    # t0 = time()
-    # with open(trk_fn, 'rb') as f:
-    #     f.seek(header_size)
-    #     j = 0
-    #     for idx in idxs:
-    #         # jump considers streamlines points and lenghts before idx
-    #         jump = lengths[:idx].sum() * point_bytes + 4 * (idx + n_properties)
-    #         f.seek(jump,1)
-
-    #         l = lengths[idx]
-    #         buffer = f.read(4)
-    #         print(idx)
-    #         assert l == struct.unpack_from('i', buffer)[0]
-    #         streamline_n_floats = (l * point_size + n_properties)
-    #         # next step assume n_properties is 0 and n_scalars is 0
-    #         streams[j:j+streamline_n_floats] = np.fromfile(f, \
-    #                     np.float32, streamline_n_floats)
-
-    #         j = j+streamline_n_floats
-    #     print(streams.resize(M,3).shape)
-    #     print(M)
-
-    # print(time() - t0)
-    # f.close()
