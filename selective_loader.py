@@ -110,16 +110,6 @@ def load_selected_streamlines(trk_fn, idxs, apply_affine=True,
         if verbose:
             print("%s sec." % (time() - t0))
 
-    if apply_affine:
-        if verbose:
-            print("Applying affine transformation to streamlines")
-            t0 = time()
-
-        aff = nib.streamlines.trk.get_affine_trackvis_to_rasmm(lazy_trk.header)
-        streamlines = [nib.affines.apply_affine(aff, s) for s in streamlines]
-        if verbose:
-            print("%s sec." % (time() - t0))
-
     if verbose:
         print("Converting all streamlines to the container %s" % container)
         t0 = time()
@@ -130,16 +120,34 @@ def load_selected_streamlines(trk_fn, idxs, apply_affine=True,
         streamlines = nib.streamlines.ArraySequence(streamlines)
     elif container == 'list':
         pass
+    elif container == 'array_flat':
+        streamlines = np.concatenate(streamlines, axis=0)
     else:
         raise Exception
 
     if verbose:
         print("%s sec." % (time() - t0))
 
+    if apply_affine:
+        if verbose:
+            print("Applying affine transformation to streamlines")
+            t0 = time()
+
+        aff = nib.streamlines.trk.get_affine_trackvis_to_rasmm(lazy_trk.header)
+        if container == 'array_flat':
+            streamlines = nib.affines.apply_affine(aff, streamlines)
+        else:
+            streamlines = [nib.affines.apply_affine(aff, s) for s in streamlines]
+
+        if verbose:
+            print("%s sec." % (time() - t0))
+
     return streamlines, lengths[idxs]
 
 
 if __name__ == '__main__':
+
+    np.random.seed(0)
 
     # trk_fn = '/Users/pietroastolfi/Desktop/toy_data/tractograms/sub-627549/sub-627549_var-FNAL_tract.trk'
     trk_fn = 'sub-100206_var-FNAL_tract.trk'
@@ -149,4 +157,5 @@ if __name__ == '__main__':
 
     streamlines2, lengths2 = load_selected_streamlines(trk_fn, idxs,
                                                        apply_affine=True,
+                                                       container='list',
                                                        verbose=True)
