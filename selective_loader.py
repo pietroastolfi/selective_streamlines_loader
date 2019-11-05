@@ -1,13 +1,25 @@
 import sys
 import nibabel as nib
-import os
-import struct
 import numpy as np
+from struct import unpack
 from time import time
 
 
+def get_length_numpy(f):
+    return np.fromfile(f, np.int32, 1)[0]
+
+
+def get_length_struct(f):
+    return unpack('<i', f.read(4))[0]
+
+
+def get_length_from_bytes(f, nb_bytes_int32=4, byteorder='little'):
+    """int.from_bytes() is available only from Python >3.2
+    """
+    return int.from_bytes(f.read(nb_bytes_int32), byteorder=byteorder)
+
 if __name__ == '__main__':
-    
+
     # trk_fn = '/Users/pietroastolfi/Desktop/toy_data/tractograms/sub-627549/sub-627549_var-FNAL_tract.trk'
     trk_fn = 'sub-100206_var-FNAL_tract.trk'
 
@@ -29,22 +41,23 @@ if __name__ == '__main__':
     print("Parsing lenghts of %s streamlines" % nb_streamlines)
     t0 = time()
     lengths = np.empty(nb_streamlines, dtype=np.int)
+    # In order to reduce the 20x increase in time when reading small
+    # amounts of bytes with NumPy and Python >3.2, we use two
+    # different implementations of the function that parses 4 bytes
+    # into an int32:
     if float(sys.version[:3]) > 3.2:
-        with open(trk_fn, 'rb') as f:
-            f.seek(header_size)
-            for idx in range(nb_streamlines):
-                l = int.from_bytes(f.read(4), byteorder='little')
-                lengths[idx] = l
-                jump = point_bytes * l + properties_bytes
-                f.seek(jump, 1)
+        get_length = get_length_from_bytes
     else:
-        with open(trk_fn, 'rb') as f:
-            f.seek(header_size)
-            for idx in range(nb_streamlines):
-                l = np.fromfile(f, np.int32, 1)[0]
-                lengths[idx] = l
-                jump = point_bytes * l + properties_bytes
-                f.seek(jump, 1)
+        get_length = get_length_numpy
+        # get_length = get_length_struct
+
+    with open(trk_fn, 'rb') as f:
+        f.seek(header_size)
+        for idx in range(nb_streamlines):
+            l = get_length(f)
+            lengths[idx] = l
+            jump = point_bytes * l + properties_bytes
+            f.seek(jump, 1)
 
     print("%s sec." % (time() - t0))
 
