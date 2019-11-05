@@ -30,7 +30,7 @@ def get_length_from_bytes(f, nb_bytes_int32=4, byteorder='little'):
 
 
 def load_selected_streamlines(trk_fn, idxs, apply_affine=True,
-                              array=False, verbose=False):
+                              container='list', verbose=False):
     """Load a list of streamlines from a .trk file that have a given
     index.
 
@@ -113,18 +113,28 @@ def load_selected_streamlines(trk_fn, idxs, apply_affine=True,
     if apply_affine:
         if verbose:
             print("Applying affine transformation to streamlines")
+            t0 = time()
 
         aff = nib.streamlines.trk.get_affine_trackvis_to_rasmm(lazy_trk.header)
         streamlines = [nib.affines.apply_affine(aff, s) for s in streamlines]
-
-    if array:
         if verbose:
-            print("Converting all streamlines from list to array")
+            print("%s sec." % (time() - t0))
 
+    if verbose:
+        print("Converting all streamlines to the container %s" % container)
+        t0 = time()
+
+    if container == 'array':
         streamlines = np.array(streamlines, dtype=np.object)
-    else:
+    elif container == 'ArraySequence':
         streamlines = nib.streamlines.ArraySequence(streamlines)
+    elif container == 'list':
+        pass
+    else:
+        raise Exception
 
+    if verbose:
+        print("%s sec." % (time() - t0))
 
     return streamlines, lengths[idxs]
 
